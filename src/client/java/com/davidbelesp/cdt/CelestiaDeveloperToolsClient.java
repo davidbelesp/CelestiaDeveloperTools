@@ -2,6 +2,7 @@ package com.davidbelesp.cdt;
 
 import com.davidbelesp.cdt.annotation.*;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -43,6 +44,16 @@ public class CelestiaDeveloperToolsClient implements ClientModInitializer {
 				for (Feature f : features) if (f instanceof JoinFeature j) j.onJoin(handler, sender, client);
 			});
 		}
+
+		if (features.stream().anyMatch(f -> f instanceof Command)) {
+			ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+				for (Feature f : features) {
+					if (f instanceof Command c) {
+						c.register(dispatcher);
+					}
+				}
+			});
+		}
 	}
 
 	private void discoverAndRegister(String basePackage) {
@@ -58,6 +69,7 @@ public class CelestiaDeveloperToolsClient implements ClientModInitializer {
 					case TICK       -> feature instanceof TickFeature;
 					case RENDER_HUD -> feature instanceof RenderHudFeature;
 					case JOIN       -> feature instanceof JoinFeature;
+					case COMMAND   -> feature instanceof Command;
 				};
 				if (!ok) {
 					throw new IllegalStateException(clazz.getSimpleName()
@@ -65,7 +77,7 @@ public class CelestiaDeveloperToolsClient implements ClientModInitializer {
 				}
 				features.add(feature);
 			} catch (Throwable t) {
-				t.printStackTrace(); // or your logger
+				t.printStackTrace();
 			}
 		}
 	}
